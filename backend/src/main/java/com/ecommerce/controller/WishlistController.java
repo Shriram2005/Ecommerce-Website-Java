@@ -1,7 +1,7 @@
 package com.ecommerce.controller;
 
 import com.ecommerce.dto.response.ApiResponse;
-import com.ecommerce.dto.response.ProductResponseDTO;
+import com.ecommerce.dto.response.ProductResponse;
 import com.ecommerce.model.User;
 import com.ecommerce.service.UserService;
 import com.ecommerce.service.WishlistService;
@@ -22,58 +22,38 @@ public class WishlistController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProductResponseDTO>>> getWishlist() {
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getWishlist() {
         User currentUser = userService.getCurrentUser();
-        List<ProductResponseDTO> wishlistItems = wishlistService.getWishlist(currentUser);
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Wishlist retrieved successfully",
-                wishlistItems,
-                true
-        ));
+        List<ProductResponse> wishlistItems = wishlistService.getWishlist(currentUser);
+        return ResponseEntity.ok(ApiResponse.success("Wishlist retrieved successfully", wishlistItems));
     }
 
     @PostMapping("/add")
     public ResponseEntity<ApiResponse<String>> addToWishlist(@RequestBody AddToWishlistRequest request) {
         User currentUser = userService.getCurrentUser();
         wishlistService.addToWishlist(currentUser, request.getProductId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(
-                "Product added to wishlist",
-                "success",
-                true
-        ));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Product added to wishlist", "success"));
     }
 
     @DeleteMapping("/remove/{productId}")
     public ResponseEntity<ApiResponse<String>> removeFromWishlist(@PathVariable String productId) {
         User currentUser = userService.getCurrentUser();
         wishlistService.removeFromWishlist(currentUser, productId);
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Product removed from wishlist",
-                "success",
-                true
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Product removed from wishlist", "success"));
     }
 
     @DeleteMapping("/clear")
     public ResponseEntity<ApiResponse<String>> clearWishlist() {
         User currentUser = userService.getCurrentUser();
         wishlistService.clearWishlist(currentUser);
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Wishlist cleared",
-                "success",
-                true
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Wishlist cleared", "success"));
     }
 
     @PostMapping("/{productId}/move-to-cart")
     public ResponseEntity<ApiResponse<String>> moveToCart(@PathVariable String productId) {
         User currentUser = userService.getCurrentUser();
         wishlistService.moveToCart(currentUser, productId);
-        return ResponseEntity.ok(new ApiResponse<>(
-                "Product moved to cart",
-                "success",
-                true
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Product moved to cart", "success"));
     }
 
     // Request DTO

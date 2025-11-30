@@ -29,12 +29,12 @@ export default function Profile() {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         phone: user.phone || '',
-        address: user.address || {
-          street: '',
-          city: '',
-          state: '',
-          country: '',
-          zipCode: '',
+        address: {
+          street: user.address?.street || '',
+          city: user.address?.city || '',
+          state: user.address?.state || '',
+          country: user.address?.country || '',
+          zipCode: user.address?.zipCode || '',
         },
       });
     }
@@ -57,7 +57,19 @@ export default function Profile() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await userAPI.updateProfile(formData);
+      // Flatten the address object for the API
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        street: formData.address.street,
+        city: formData.address.city,
+        state: formData.address.state,
+        country: formData.address.country,
+        zipCode: formData.address.zipCode,
+      };
+      
+      await userAPI.updateProfile(payload);
       await fetchProfile();
       setIsEditing(false);
       toast.success('Profile updated successfully');
@@ -259,10 +271,15 @@ export default function Profile() {
                 <MapPinIcon className="h-5 w-5 text-gray-400 mt-1" />
                 <div>
                   <p className="text-sm text-gray-500">Address</p>
-                  {user.address?.street ? (
+                  {user.address && (user.address.street || user.address.city || user.address.state || user.address.country) ? (
                     <p className="font-medium">
-                      {user.address.street}<br />
-                      {user.address.city}, {user.address.state} {user.address.zipCode}<br />
+                      {user.address.street && <>{user.address.street}<br /></>}
+                      {(user.address.city || user.address.state || user.address.zipCode) && (
+                        <>
+                          {[user.address.city, user.address.state, user.address.zipCode].filter(Boolean).join(', ')}
+                          <br />
+                        </>
+                      )}
                       {user.address.country}
                     </p>
                   ) : (

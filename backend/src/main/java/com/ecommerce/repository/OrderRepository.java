@@ -22,4 +22,7 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     List<Order> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     
     long countByStatus(Order.OrderStatus status);
+    
+    // Find delivered orders for a specific user
+    List<Order> findByUserIdAndStatus(String userId, Order.OrderStatus status);
 }

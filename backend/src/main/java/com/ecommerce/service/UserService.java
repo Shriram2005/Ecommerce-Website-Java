@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,43 +28,43 @@ public class UserService {
         return UserResponse.fromUser(getCurrentUser());
     }
     
+    @Transactional
     public UserResponse updateProfile(UpdateProfileRequest request) {
         User user = getCurrentUser();
         
-        if (request.getFirstName() != null) {
+        if (hasValue(request.getFirstName())) {
             user.setFirstName(request.getFirstName());
         }
-        if (request.getLastName() != null) {
+        if (hasValue(request.getLastName())) {
             user.setLastName(request.getLastName());
         }
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
         }
-        if (request.getProfileImage() != null) {
+        if (hasValue(request.getProfileImage())) {
             user.setProfileImage(request.getProfileImage());
         }
         
-        // Update address if any address field is provided
-        if (request.getStreet() != null || request.getCity() != null || 
-            request.getState() != null || request.getZipCode() != null || 
-            request.getCountry() != null) {
-            
-            User.Address address = user.getAddress();
-            if (address == null) {
-                address = new User.Address();
-            }
-            
-            if (request.getStreet() != null) address.setStreet(request.getStreet());
-            if (request.getCity() != null) address.setCity(request.getCity());
-            if (request.getState() != null) address.setState(request.getState());
-            if (request.getZipCode() != null) address.setZipCode(request.getZipCode());
-            if (request.getCountry() != null) address.setCountry(request.getCountry());
-            
-            user.setAddress(address);
+        // Update address - always update if any address field is provided
+        User.Address address = user.getAddress();
+        if (address == null) {
+            address = new User.Address();
         }
+        
+        if (request.getStreet() != null) address.setStreet(request.getStreet());
+        if (request.getCity() != null) address.setCity(request.getCity());
+        if (request.getState() != null) address.setState(request.getState());
+        if (request.getZipCode() != null) address.setZipCode(request.getZipCode());
+        if (request.getCountry() != null) address.setCountry(request.getCountry());
+        
+        user.setAddress(address);
         
         user = userRepository.save(user);
         return UserResponse.fromUser(user);
+    }
+    
+    private boolean hasValue(String value) {
+        return value != null && !value.trim().isEmpty();
     }
     
     // Admin methods

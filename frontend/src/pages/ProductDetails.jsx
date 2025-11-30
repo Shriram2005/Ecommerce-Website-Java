@@ -15,6 +15,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { productsAPI, reviewsAPI } from '../services/api';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
+import { useWishlistStore } from '../store/wishlistStore';
 import toast from 'react-hot-toast';
 
 export default function ProductDetails() {
@@ -22,6 +23,7 @@ export default function ProductDetails() {
   const navigate = useNavigate();
   const { addToCart, isLoading: cartLoading } = useCartStore();
   const { isAuthenticated } = useAuthStore();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
   
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -29,6 +31,7 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('description');
+  const [isInWishlistState, setIsInWishlistState] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -38,8 +41,10 @@ export default function ProductDetails() {
           productsAPI.getById(id),
           reviewsAPI.getByProduct(id, { size: 10 }),
         ]);
-        setProduct(productRes.data.data);
+        const productData = productRes.data.data;
+        setProduct(productData);
         setReviews(reviewsRes.data.data.content || []);
+        setIsInWishlistState(isInWishlist(productData.id));
       } catch (error) {
         console.error('Failed to fetch product:', error);
         toast.error('Product not found');
@@ -57,6 +62,21 @@ export default function ProductDetails() {
       return;
     }
     await addToCart(product.id, quantity);
+  };
+
+  const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
+    if (isInWishlistState) {
+      await removeFromWishlist(product.id);
+      setIsInWishlistState(false);
+    } else {
+      await addToWishlist(product);
+      setIsInWishlistState(true);
+    }
   };
 
   const renderStars = (rating) => {
@@ -201,8 +221,16 @@ export default function ProductDetails() {
               <ShoppingCartIcon className="h-5 w-5" />
               Add to Cart
             </button>
-            <button className="p-3 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-              <HeartIcon className="h-6 w-6" />
+            <button
+              onClick={handleWishlistToggle}
+              className="p-3 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title={isInWishlistState ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
+              {isInWishlistState ? (
+                <HeartIcon className="h-6 w-6 text-red-500 fill-red-500" />
+              ) : (
+                <HeartIcon className="h-6 w-6" />
+              )}
             </button>
           </div>
 

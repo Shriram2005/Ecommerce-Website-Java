@@ -4,8 +4,10 @@ import com.ecommerce.dto.request.ReviewRequest;
 import com.ecommerce.dto.response.ReviewResponse;
 import com.ecommerce.exception.BadRequestException;
 import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.model.Order;
 import com.ecommerce.model.Review;
 import com.ecommerce.model.User;
+import com.ecommerce.repository.OrderRepository;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class ReviewService {
     private final ProductRepository productRepository;
     private final ProductService productService;
     private final UserService userService;
+    private final OrderRepository orderRepository;
     
     public Page<ReviewResponse> getProductReviews(String productId, Pageable pageable) {
         return reviewRepository.findByProductId(productId, pageable)
@@ -42,6 +45,9 @@ public class ReviewService {
             throw new BadRequestException("You have already reviewed this product");
         }
         
+        // Check if user has purchased the product (verified purchase)
+        boolean isVerifiedPurchase = hasUserPurchasedProduct(user.getId(), request.getProductId());
+        
         Review review = Review.builder()
                 .productId(request.getProductId())
                 .userId(user.getId())
@@ -49,7 +55,7 @@ public class ReviewService {
                 .rating(request.getRating())
                 .title(request.getTitle())
                 .comment(request.getComment())
-                .verified(false) // TODO: Check if user has purchased the product
+                .verified(isVerifiedPurchase)
                 .build();
         
         review = reviewRepository.save(review);
@@ -58,6 +64,20 @@ public class ReviewService {
         updateProductRating(request.getProductId());
         
         return ReviewResponse.fromReview(review);
+    }
+    
+    /**
+     * Check if a user has purchased a specific product.
+     * A purchase is verified if the user has a delivered order containing the product.
+     */
+    private boolean hasUserPurchasedProduct(String userId, String productId) {
+        // Get all delivered orders for this user
+        List<Order> deliveredOrders = orderRepository.findByUserIdAndStatus(userId, Order.OrderStatus.DELIVERED);
+        
+        // Check if any delivered order contains the product
+        return deliveredOrders.stream()
+                .flatMap(order -> order.getItems().stream())
+                .anyMatch(item -> item.getProductId().equals(productId));
     }
     
     public ReviewResponse updateReview(String reviewId, ReviewRequest request) {

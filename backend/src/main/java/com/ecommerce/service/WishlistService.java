@@ -1,6 +1,6 @@
 package com.ecommerce.service;
 
-import com.ecommerce.dto.response.ProductResponseDTO;
+import com.ecommerce.dto.response.ProductResponse;
 import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.model.Product;
 import com.ecommerce.model.User;
@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 public class WishlistService {
     private final WishlistRepository wishlistRepository;
     private final ProductRepository productRepository;
-    private final ProductService productService;
 
     @Transactional
     public Wishlist getOrCreateWishlist(User user) {
@@ -32,10 +31,10 @@ public class WishlistService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponseDTO> getWishlist(User user) {
+    public List<ProductResponse> getWishlist(User user) {
         Wishlist wishlist = getOrCreateWishlist(user);
         return wishlist.getProducts().stream()
-                .map(productService::convertToResponseDTO)
+                .map(ProductResponse::fromProduct)
                 .collect(Collectors.toList());
     }
 

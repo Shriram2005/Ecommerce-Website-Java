@@ -26,21 +26,27 @@ export const useWishlistStore = create(
 
       addToWishlist: async (product) => {
         const { items } = get();
-        const exists = items.some(item => item.id === product.id);
+        const productId = typeof product === 'string' ? product : product.id;
+        const exists = items.some(item => item.id === productId);
         
         if (exists) {
           toast.error('Already in wishlist');
           return;
         }
 
+        // Create product object if only ID was passed
+        const productToAdd = typeof product === 'string' ? { id: product } : product;
+        
         // Optimistic update
-        set({ items: [...items, product] });
+        set({ items: [...items, productToAdd] });
         
         try {
-          await wishlistAPI.add(product.id);
+          await wishlistAPI.add(productId);
           toast.success('Added to wishlist!', { icon: '❤️' });
         } catch (error) {
-          // Keep local state even if API fails
+          // Revert on error
+          set({ items: items.filter(item => item.id !== productId) });
+          toast.error('Failed to add to wishlist');
           console.error('Failed to sync wishlist:', error);
         }
       },
